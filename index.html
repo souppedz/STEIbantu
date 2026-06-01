@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STEI Bantu — Superapp Kampus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="workspace-wrapper">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar-nav" id="main-sidebar" style="filter: blur(4px); pointer-events: none;">
+        <div class="sidebar-logo">
+            <div class="logo-icon"><i class="fa fa-motorcycle"></i></div>
+            <h2>STEI <span>Bantu</span></h2>
+        </div>
+        <div class="sidebar-profile-card">
+            <div class="profile-avatar"><i class="fa fa-user-shield"></i></div>
+            <div class="profile-info">
+                <span id="sidebar-profile-name">User Superapp</span>
+                <small>BantuPay Aktif</small>
+            </div>
+            <button class="topup-action-trigger" onclick="toggleModal('topup-modal', true)"><i class="fa fa-plus"></i></button>
+        </div>
+        <div class="nav-section-label">Menu Utama</div>
+        <button type="button" class="tab-nav-btn active" data-tab="tab-home"><i class="fa fa-th-large"></i> Beranda Workspace</button>
+        <button type="button" class="tab-nav-btn" data-tab="tab-orders"><i class="fa fa-receipt"></i> Aktivitas & Jadwal</button>
+        <button type="button" class="tab-nav-btn" data-tab="tab-chats"><i class="fa fa-comment-dots"></i> Obrolan Pesan</button>
+        <div class="sidebar-wallet-mini" style="margin-top: auto;">
+            <div class="sbal-label"><i class="fa fa-wallet" style="margin-right:4px;"></i> BantuPay</div>
+            <div class="sbal-amount" id="sidebar-wallet-balance">Rp 250.000</div>
+            <div class="sidebar-wallet-actions">
+                <button class="swal-btn primary" onclick="toggleModal('topup-modal', true)"><i class="fa fa-plus"></i> Top Up</button>
+                <button class="swal-btn secondary" onclick="showQRModal()"><i class="fa fa-qrcode"></i> QR</button>
+            </div>
+        </div>
+        <!-- Bug 3: Logout button -->
+        <button class="sidebar-logout-btn" onclick="handleLogout()">
+            <i class="fa fa-right-from-bracket"></i> Keluar / Logout
+        </button>
+    </nav>
+
+    <!-- MAIN WORKSPACE -->
+    <main class="main-app-container">
+
+        <!-- PANEL 1: AUTH -->
+        <section id="auth-view" class="app-panel-view" style="display: flex; align-items: center; justify-content: center; z-index: 10;">
+            <div class="auth-center-card">
+                <div class="auth-branding">
+                    <div class="brand-badge"><i class="fa fa-shield-halved"></i></div>
+                    <h1>Masuk dulu, yuk!</h1>
+                    <p>Akses cepat semua kebutuhan kampus Ganesha menggunakan nomor handphone.</p>
+                </div>
+                <div class="auth-toggle-header">
+                    <button type="button" class="toggle-btn active" onclick="switchAuthMode('login')">Masuk</button>
+                    <button type="button" class="toggle-btn" onclick="switchAuthMode('signup')">Daftar Akun</button>
+                </div>
+                <form id="core-auth-form" onsubmit="handleFakeAuth(event)">
+                    <div class="input-group" id="signup-extra-fields" style="display: none;">
+                        <label>Nama Lengkap</label>
+                        <input type="text" id="auth-input-name" class="form-control" placeholder="Masukkan nama Anda">
+                    </div>
+                    <div class="input-group">
+                        <label>Nomor Handphone</label>
+                        <div style="display:flex; gap:8px;">
+                            <span class="phone-prefix">+62</span>
+                            <input type="tel" id="auth-input-identifier" class="form-control" placeholder="81xxxxxxxxx" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary-gold" style="width:100%; padding:13px; font-size:0.92rem; border-radius: 8px;">Kirim OTP <i class="fa fa-arrow-right" style="margin-left:4px;"></i></button>
+                </form>
+                <!-- Bug 3: demo account hints -->
+                <div style="margin-top:16px; padding:12px 14px; background:var(--surface); border-radius:var(--radius-sm); border:1.5px solid var(--border);">
+                    <div style="font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Akun Demo (OTP: 1234)</div>
+                    <div style="display:flex; flex-direction:column; gap:5px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.8rem;">
+                            <span><i class="fa fa-user" style="color:var(--navy); margin-right:5px;"></i> <b>Pengguna:</b> +628123456789</span>
+                            <button onclick="document.getElementById('auth-input-identifier').value='8123456789'" class="qtag" style="cursor:pointer;">Pakai</button>
+                        </div>
+                        <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.8rem;">
+                            <span><i class="fa fa-motorcycle" style="color:var(--gold); margin-right:5px;"></i> <b>Mitra Ride:</b> +628999999901 (Asep)</span>
+                            <button onclick="document.getElementById('auth-input-identifier').value='8999999901'" class="qtag" style="cursor:pointer;">Pakai</button>
+                        </div>
+                        <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.8rem;">
+                            <span><i class="fa fa-car" style="color:var(--gold); margin-right:5px;"></i> <b>Mitra Ride:</b> +628999999902 (Budi)</span>
+                            <button onclick="document.getElementById('auth-input-identifier').value='8999999902'" class="qtag" style="cursor:pointer;">Pakai</button>
+                        </div>
+                        <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.8rem;">
+                            <span><i class="fa fa-wrench" style="color:var(--gold); margin-right:5px;"></i> <b>Mitra Fix:</b> +628999999903 (Ujang)</span>
+                            <button onclick="document.getElementById('auth-input-identifier').value='8999999903'" class="qtag" style="cursor:pointer;">Pakai</button>
+                        </div>
+                        <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.8rem;">
+                            <span><i class="fa fa-broom" style="color:var(--gold); margin-right:5px;"></i> <b>Mitra Clean:</b> +628999999904 (Imas)</span>
+                            <button onclick="document.getElementById('auth-input-identifier').value='8999999904'" class="qtag" style="cursor:pointer;">Pakai</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PANEL 2: DASHBOARD -->
+        <section id="dashboard-view" class="app-panel-view active">
+
+            <!-- TAB: HOME -->
+            <div id="tab-home" class="tab-content active">
+                <div class="dashboard-header animate-in">
+                    <h2>Beranda Workspace</h2>
+                    <p>Selamat datang di STEI Bantu Ganesha</p>
+                </div>
+                <div class="premium-wallet-card animate-in">
+                    <div class="wallet-top-row">
+                        <div>
+                            <div class="w-label"><i class="fa fa-wallet" style="margin-right:4px;opacity:0.7;"></i> Total Saldo BantuPay</div>
+                            <h2 id="dashboard-wallet-balance-text">Rp 250.000</h2>
+                        </div>
+                        <div class="wallet-action-col">
+                            <button class="wallet-btn gold" onclick="toggleModal('topup-modal', true)"><i class="fa fa-plus"></i> Isi Saldo</button>
+                            <button class="wallet-btn white" onclick="showQRModal()"><i class="fa fa-qrcode"></i> QR Bayar</button>
+                        </div>
+                    </div>
+                    <div class="wallet-stats-row">
+                        <div class="stat-chip"><i class="fa fa-star"></i> <span id="user-points-display">620</span> pts</div>
+                        <div class="stat-chip"><i class="fa fa-crown"></i> Silver</div>
+                        <div class="stat-chip"><i class="fa fa-globe"></i> IDR</div>
+                    </div>
+                    <div class="wallet-progress-section">
+                        <div class="prog-labels">
+                            <small>Level Silver</small>
+                            <small><span id="current-xp">280</span> / 600 XP → Gold</small>
+                        </div>
+                        <div class="prog-track"><div class="prog-fill" style="width: 46%;"></div></div>
+                    </div>
+                </div>
+                <div class="section-title animate-in">Layanan Kampus</div>
+                <div class="services-grid-matrix animate-in">
+                    <div class="service-item-btn" data-service="BantuRide">
+                        <div class="s-icon-box ride"><i class="fa fa-motorcycle"></i></div>
+                        <span>BantuRide</span><small>Ojek & Mobil</small>
+                    </div>
+                    <div class="service-item-btn" data-service="BantuSend">
+                        <div class="s-icon-box send"><i class="fa fa-box"></i></div>
+                        <span>BantuSend</span><small>Kirim Paxel</small>
+                    </div>
+                    <div class="service-item-btn" data-service="BantuClean">
+                        <div class="s-icon-box clean"><i class="fa fa-broom"></i></div>
+                        <span>BantuClean</span><small>Bersih Kos</small>
+                    </div>
+                    <div class="service-item-btn" data-service="BantuFix">
+                        <div class="s-icon-box fix"><i class="fa fa-wrench"></i></div>
+                        <span>BantuFix</span><small>Servis Handyman</small>
+                    </div>
+                    <div class="service-item-btn" data-service="BantuShop">
+                        <div class="s-icon-box shop"><i class="fa fa-bag-shopping"></i></div>
+                        <span>BantuShop</span><small>Belanja Apa Saja</small>
+                    </div>
+                </div>
+                <div class="map-preview-card animate-in">
+                    <div class="map-card-header">
+                        <h4><i class="fa fa-map-location-dot"></i> Peta Mitra Terdekat (Bandung)</h4>
+                        <span class="live-badge">Live GPS</span>
+                    </div>
+                    <div id="leaflet-map" style="height: 220px; z-index:1;"></div>
+                </div>
+            </div>
+
+            <!-- TAB: ORDERS -->
+            <div id="tab-orders" class="tab-content">
+                <div class="dashboard-header">
+                    <h2>Aktivitas & Jadwal</h2>
+                    <p>Riwayat pesanan dan jadwal terjadwal</p>
+                </div>
+                <div id="orders-history-list">
+                    <div class="empty-state-banner"><i class="fa fa-receipt"></i><p>Belum ada transaksi berjalan.</p></div>
+                </div>
+            </div>
+
+            <!-- TAB: CHATS -->
+            <div id="tab-chats" class="tab-content">
+                <div class="dashboard-header">
+                    <h2>Obrolan Pesan</h2>
+                    <p>Pesan masuk dari driver dan mitra</p>
+                </div>
+                <div id="chats-list-container">
+                    <div class="empty-state-banner"><i class="fa fa-comment-dots"></i><p>Belum ada obrolan aktif.</p></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PANEL 3: SERVICE WORKSPACE -->
+        <section id="service-workspace-view" class="app-panel-view subpage-layout-mode" style="display:none;">
+            <div class="workspace-sticky-header">
+                <button class="back-btn back-to-home-trigger"><i class="fa fa-arrow-left"></i></button>
+                <div class="workspace-header-info">
+                    <h2 id="workspace-service-title">Detail Layanan</h2>
+                    <small id="workspace-service-subtitle"></small>
+                </div>
+            </div>
+            <div class="workspace-scrollable-body">
+
+                <!-- SHEET: BANTURIDE -->
+                <div id="sheet-BantuRide" class="service-specific-sheet" style="display:none;">
+                    <div class="service-banner">
+                        <h3><i class="fa fa-motorcycle"></i> Transportasi Instan Ganesha</h3>
+                        <p>Jemput antar mahasiswa melintasi kosan, lab, dan gerbang kampus.</p>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Titik Penjemputan</label>
+                        <div class="geo-input-wrap">
+                            <input type="text" id="ride-pickup" class="form-control" placeholder="Ketik alamat penjemputan...">
+                            <div id="ride-pickup-suggestions" class="geo-suggestions"></div>
+                        </div>
+                        <div class="quick-tags-row">
+                            <span class="qtag" onclick="setLoc('ride-pickup','Gerbang Depan ITB Ganesha')">📍 Ganesha</span>
+                            <span class="qtag" onclick="setLoc('ride-pickup','Asrama Kidang Pananjung')">🏠 Asrama</span>
+                            <span class="qtag" onclick="setLoc('ride-pickup','Lab STEI Achmad Bakrie')">🔬 Lab STEI</span>
+                        </div>
+                    </div>
+                    <div class="input-group" style="margin-top:14px;">
+                        <label class="input-label">Destinasi Tujuan</label>
+                        <div class="geo-input-wrap">
+                            <input type="text" id="ride-destination" class="form-control" placeholder="Ketik tujuan...">
+                            <div id="ride-destination-suggestions" class="geo-suggestions"></div>
+                        </div>
+                        <div class="quick-tags-row">
+                            <span class="qtag" onclick="setLoc('ride-destination','Stasiun Bandung Kota')">🚉 Stasiun</span>
+                            <span class="qtag" onclick="setLoc('ride-destination','Simpang Dago Lama')">🚦 Simpang Dago</span>
+                            <span class="qtag" onclick="setLoc('ride-destination','Paris Van Java Mall')">🛍️ PVJ</span>
+                            <span class="qtag" onclick="setLoc('ride-destination','Braga City Walk')">🏙️ Braga</span>
+                        </div>
+                    </div>
+                    <div class="input-group" style="margin-top:14px;">
+                        <label class="input-label">Armada Kendaraan</label>
+                        <div class="radio-card-flex">
+                            <label class="radio-card">
+                                <input type="radio" name="ride-vehicle" value="motorcycle" checked onchange="updateLivePrices()">
+                                <div class="rc-box"><i class="fa fa-motorcycle"></i> Motor</div>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="ride-vehicle" value="car" onchange="updateLivePrices()">
+                                <div class="rc-box"><i class="fa fa-car"></i> Mobil</div>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="input-group" style="margin-top:14px;">
+                        <label class="input-label">Pilih Tier Layanan</label>
+                        <div class="tier-selector-row">
+                            <label class="tier-card">
+                                <input type="radio" name="ride-tier" value="Hemat" onchange="updateLivePrices()">
+                                <div class="tier-box hemat">
+                                    <i class="fa fa-leaf"></i>
+                                    <span>Hemat</span>
+                                    <small>Diskon 15%</small>
+                                </div>
+                            </label>
+                            <label class="tier-card">
+                                <input type="radio" name="ride-tier" value="Normal" checked onchange="updateLivePrices()">
+                                <div class="tier-box normal">
+                                    <i class="fa fa-star"></i>
+                                    <span>Normal</span>
+                                    <small>Harga Standar</small>
+                                </div>
+                            </label>
+                            <label class="tier-card">
+                                <input type="radio" name="ride-tier" value="Luxe" onchange="updateLivePrices()">
+                                <div class="tier-box luxe">
+                                    <i class="fa fa-crown"></i>
+                                    <span>Luxe</span>
+                                    <small>Premium +40%</small>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SHEET: BANTUSEND -->
+                <div id="sheet-BantuSend" class="service-specific-sheet" style="display:none;">
+                    <div class="service-banner">
+                        <h3><i class="fa fa-box"></i> Logistik Kurir Kilat</h3>
+                        <p>Kirim maket, dokumen TA, berkas jurusan, aman sampai tujuan.</p>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Lokasi Pengirim</label>
+                        <div class="geo-input-wrap">
+                            <input type="text" id="send-pickup" class="form-control" value="Lab STEI Achmad Bakrie">
+                            <div id="send-pickup-suggestions" class="geo-suggestions"></div>
+                        </div>
+                    </div>
+                    <div class="input-group" style="margin-top:14px;">
+                        <label class="input-label">Lokasi Penerima</label>
+                        <div class="geo-input-wrap">
+                            <input type="text" id="send-destination" class="form-control" placeholder="Tujuan drop kurir">
+                            <div id="send-destination-suggestions" class="geo-suggestions"></div>
+                        </div>
+                    </div>
+                    <div class="input-group" style="margin-top:14px;">
+                        <label class="input-label">Ukuran Paket</label>
+                        <select id="send-size" class="form-control" onchange="updateLivePrices()">
+                            <option value="S">S — Dokumen / Laprak (Rp 7.000)</option>
+                            <option value="M">M — Buku / Kotak Gadget (Rp 11.000)</option>
+                            <option value="L">L — PC / Maket A3 (Rp 17.000)</option>
+                            <option value="XL">XL — Maket Besar / Barang Besar (Rp 26.000)</option>
+                        </select>
+                    </div>
+                    <div class="input-group" style="margin-top:14px;">
+                        <label class="input-label">Kecepatan Pengiriman</label>
+                        <div class="speed-tier-row">
+                            <label class="speed-card">
+                                <input type="radio" name="send-speed-radio" value="Instant" onchange="document.getElementById('send-speed').value='Instant'; updateLivePrices()">
+                                <div class="speed-box">
+                                    <i class="fa fa-bolt" style="color:#f59e0b"></i>
+                                    <span>Instant</span>
+                                    <small>1–2 Jam</small>
+                                </div>
+                            </label>
+                            <label class="speed-card">
+                                <input type="radio" name="send-speed-radio" value="Same-Day" checked onchange="document.getElementById('send-speed').value='Same-Day'; updateLivePrices()">
+                                <div class="speed-box">
+                                    <i class="fa fa-truck" style="color:#2563eb"></i>
+                                    <span>Same-Day</span>
+                                    <small>Hari Ini</small>
+                                </div>
+                            </label>
+                            <label class="speed-card">
+                                <input type="radio" name="send-speed-radio" value="Hemat" onchange="document.getElementById('send-speed').value='Hemat'; updateLivePrices()">
+                                <div class="speed-box">
+                                    <i class="fa fa-leaf" style="color:#16a34a"></i>
+                                    <span>Hemat</span>
+                                    <small>2–3 Hari</small>
+                                </div>
+                            </label>
+                        </div>
+                        <input type="hidden" id="send-speed" value="Same-Day">
+                    </div>
+                    <div class="input-group" style="margin-top:14px;">
+                        <label class="input-label">Catatan Paket (Opsional)</label>
+                        <input type="text" class="form-control" id="send-notes" placeholder="Contoh: Dokumen TA fragile, jangan dilipat">
+                    </div>
+                </div>
+
+                <!-- SHEET: BANTUCLEAN -->
+                <div id="sheet-BantuClean" class="service-specific-sheet" style="display:none;">
+                    <div class="service-banner">
+                        <h3><i class="fa fa-broom"></i> Bersih Kosan & Kamar Lab</h3>
+                        <p>Serahkan kebersihan ruang belajar atau kamar kost ke tim spesialis kami.</p>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Lokasi Pengerjaan</label>
+                        <input type="text" id="clean-location" class="form-control" placeholder="Alamat lengkap pengerjaan">
+                    </div>
+                    <div class="input-group" style="margin-top:14px;">
+                        <label class="input-label">Tipe Ruangan</label>
+                        <select id="clean-room-type" class="form-control" onchange="updateLivePrices()">
+                            <option value="Kamar Tidur">🛏️ Kamar Tidur</option>
+                            <option value="Kamar Mandi">🚿 Kamar Mandi (+30%)</option>
+                            <option value="Dapur">🍳 Dapur (+20%)</option>
+                            <option value="Ruang Tamu">🛋️ Ruang Tamu</option>
+                            <option value="Kost Keseluruhan">🏠 Kost Keseluruhan (+50%)</option>
+                        </select>
+                    </div>
+                    <div class="input-group" style="margin-top:14px;">
+                        <label class="input-label">Tipe Pembersihan</label>
+                        <select id="clean-type" class="form-control" onchange="updateLivePrices()">
+                            <option value="Sapu & Pel">🧹 Sapu & Pel (Standar)</option>
+                            <option value="Bersih Standar">✨ Bersih Standar (Lap + Vacuum)</option>
+                            <option value="Deep Clean">💪 Deep Clean (Menyeluruh)</option>
+                            <option value="Sterilisasi UV">🔬 Sterilisasi UV (Anti-Kuman)</option>
+                        </select>
+                    </div>
+                    <div class="input-group" style="margin-top:14px;">
+                        <label class="input-label">Luas Area (m²)</label>
+                        <input type="number" id="clean-sqm" class="form-control" value="12" min="4" max="200" oninput="updateLivePrices()">
+                    </div>
+                    <div class="input-group" style="margin-top:14px;">
+                        <label class="input-label">Jadwalkan (Opsional)</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="date" id="clean-schedule-date" class="form-control" style="flex:1">
+                            <input type="time" id="clean-schedule-time" class="form-control" style="width:120px;" value="09:00">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SHEET: BANTUFIX -->
+                <div id="sheet-BantuFix" class="service-specific-sheet" style="display:none;">
+                    <div class="service-banner">
+                        <h3><i class="fa fa-wrench"></i> Servis & Perbaikan Cerdas</h3>
+                        <p>AI mendiagnosis masalahmu, atau pilih dari 50+ katalog layanan perbaikan.</p>
+                    </div>
+                    <!-- AI FIX -->
+                    <div class="ai-input-section">
+                        <div class="ai-section-header">
+                            <div><div class="ai-badge"><i class="fa fa-sparkles"></i> AI Diagnosis</div></div>
+                            <div><h4>Deskripsikan Masalahmu</h4><p>AI otomatis estimasi biaya</p></div>
+                        </div>
+                        <textarea class="ai-textarea" id="fix-ai-query" rows="3" placeholder="Contoh: AC kamar kos tidak dingin sudah 2 hari...&#10;Atau: Laptop mati total tidak bisa dihidupkan...&#10;Atau: Lampu kamar sering berkedip dan konslet..."></textarea>
+                        <button class="ai-search-btn" id="fix-ai-btn" onclick="runAiBantuFixDiagnosis()">
+                            <i class="fa fa-sparkles"></i> Diagnosis & Estimasi Biaya
+                        </button>
+                    </div>
+                    <div id="fix-ai-result-panel" style="display:none;"></div>
+                    <!-- CATALOG -->
+                    <div class="ifixit-divider">atau pilih dari katalog layanan</div>
+                    <div id="fix-selected-label" class="fix-selected-label" style="display:none;"></div>
+                    <div class="fix-catalog-wrapper">
+                        <div id="bantufix-catalog-grid" class="fix-cat-grid" onload="renderBantuFixCatalog()"></div>
+                    </div>
+                    <!-- Category Drawer -->
+                    <div id="fix-category-drawer" style="display:none;" class="fix-drawer">
+                        <div class="fix-drawer-header">
+                            <span id="fix-drawer-title" class="fix-drawer-title">Kategori</span>
+                            <button onclick="closeFixDrawer()" class="fix-drawer-close">✕ Tutup</button>
+                        </div>
+                        <div id="fix-drawer-items"></div>
+                    </div>
+                </div>
+
+                <!-- SHEET: BANTUSHOP -->
+                <div id="sheet-BantuShop" class="service-specific-sheet" style="display:none;">
+                    <div class="service-banner">
+                        <h3><i class="fa fa-bag-shopping"></i> Beli Apa Saja — Shopee Runner</h3>
+                        <p>Belanja apapun seperti Shopee, tapi dibeliin mitra langsung dari toko!</p>
+                    </div>
+
+                    <!-- Cart button -->
+                    <button id="cart-toggle-btn" class="cart-float-btn" onclick="toggleCartPanel()" style="display:none;">
+                        <i class="fa fa-cart-shopping"></i>
+                        <span id="cart-badge" class="cart-badge-num"></span>
+                        Lihat Cart
+                    </button>
+                    <div id="cart-panel" style="display:none;" class="cart-panel-overlay"></div>
+
+                    <!-- AI Search -->
+                    <div class="ai-input-section">
+                        <div class="ai-section-header">
+                            <div><div class="ai-badge"><i class="fa fa-sparkles"></i> AI Shop Finder</div></div>
+                            <div><h4>Minta Apa Saja</h4><p>AI cari harga & toko terbaik</p></div>
+                        </div>
+                        <textarea class="ai-textarea" id="shop-ai-query" rows="3" placeholder="Contoh: kertas HVS 2 rim + staples besar&#10;Atau: bahan maket balsa, foam board, lem fox&#10;Atau: mie instan 5 bungkus + minuman energi + snack TA"></textarea>
+                        <button class="ai-search-btn" id="shop-ai-btn" onclick="runAiBantuShopSearch()">
+                            <i class="fa fa-sparkles"></i> Cari & Estimasi Harga
+                        </button>
+                        <input type="hidden" id="shop-ai-items-cost" value="0">
+                    </div>
+                    <div id="shop-ai-result-panel" style="display:none;"></div>
+
+                    <!-- Catalog -->
+                    <div class="ifixit-divider">atau belanja dari katalog produk</div>
+
+                    <!-- Category Pills -->
+                    <div id="shop-cat-pills" class="shop-pills-row"></div>
+
+                    <!-- Search bar -->
+                    <div class="shop-search-bar" style="margin:10px 0;">
+                        <i class="fa fa-search"></i>
+                        <input type="text" id="shop-search" placeholder="Cari produk... (kertas, mie, kabel, dll)" oninput="searchShop(this.value)">
+                    </div>
+
+                    <!-- Product Feed -->
+                    <div id="shop-product-feed" class="shop-product-grid"></div>
+
+
+                </div>
+            </div>
+
+            <!-- CHECKOUT FOOTER -->
+            <div class="workspace-fixed-footer">
+                <div class="pricing-summary-matrix">
+                    <div class="pricing-row"><span><i class="fa fa-route" style="color:var(--navy);margin-right:3px;"></i> <span id="estimated-distance-label">—</span></span><b id="calculated-base-fare">Rp 0</b></div>
+                    <div class="pricing-row" id="discount-row" style="display:none;"><span style="color:#16a34a">Diskon Tier</span><b style="color:#16a34a">Rp 0</b></div>
+                    <div class="pricing-row"><span><i class="fa fa-clock" style="color:var(--navy);margin-right:3px;"></i> <span id="estimated-duration-label">—</span></span><b id="calculated-modifier-fare">Rp 0</b></div>
+                    <div class="pricing-row total-row"><span>Total Bayar</span><b id="final-calculated-total">Rp 0</b></div>
+                </div>
+                <button type="button" class="order-btn" onclick="triggerOrderPlacement()">
+                    <i class="fa fa-circle-check"></i> Pesan Sekarang
+                </button>
+            </div>
+        </section>
+
+        <!-- PANEL 4: LIVE TRACKING -->
+        <section id="live-tracking-view" class="app-panel-view subpage-layout-mode" style="display:none; flex-direction:column; height:100%; padding:0;">
+            <div style="flex:1; position:relative;">
+                <div id="tracking-leaflet-map" style="height:100%; width:100%; z-index:1;"></div>
+                <button class="back-to-home-trigger" style="position:absolute; top:16px; left:16px; z-index:1000; box-shadow: 0 2px 8px rgba(0,0,0,0.12); background:white;">
+                    <i class="fa fa-arrow-left"></i> Kembali
+                </button>
+            </div>
+            <div class="tracking-bottom-sheet-card">
+                <div class="track-status-header">
+                    <h2 id="track-status-main">Mencari Mitra Terdekat...</h2>
+                    <span id="track-eta-text" class="eta-badge">Alokasi Sistem</span>
+                </div>
+                <div class="driver-assigned-profile-row">
+                    <div class="driver-avatar-box"><i class="fa fa-user-astronaut"></i></div>
+                    <div class="driver-core-meta" style="flex:1;">
+                        <h4 id="tracking-driver-name-label">Mencari Alokasi...</h4>
+                        <div id="tracking-driver-plate" class="driver-plate-tag">—</div>
+                    </div>
+                    <div class="tracking-action-btns">
+                        <button class="track-action-btn" id="tracking-chat-btn" data-order-id="" onclick="openChatFromOrder(this.dataset.orderId)">
+                            <i class="fa fa-comment-dots"></i>
+                        </button>
+                        <button class="track-action-btn" id="tracking-detail-btn" data-order-id="" onclick="openOrderDetail(this.dataset.orderId)">
+                            <i class="fa fa-receipt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PANEL 5: ORDER DETAIL (Gojek-style) -->
+        <section id="order-detail-view" class="app-panel-view subpage-layout-mode" style="display:none;">
+            <div class="workspace-sticky-header">
+                <button class="back-btn" onclick="goBackFromDetail()"><i class="fa fa-arrow-left"></i></button>
+                <div class="workspace-header-info">
+                    <h2>Detail Pesanan</h2>
+                    <small id="detail-order-id">#—</small>
+                </div>
+                <span id="detail-status-label" style="margin-left:auto; font-weight:700; font-size:0.82rem;">—</span>
+            </div>
+            <div class="workspace-scrollable-body" style="padding-bottom: 80px;">
+
+                <!-- Map preview -->
+                <div id="detail-tracking-map" style="height:180px; border-radius:var(--radius-lg); overflow:hidden; margin-bottom:14px; border:1.5px solid var(--border);"></div>
+
+                <!-- Worker card -->
+                <div class="detail-worker-card">
+                    <img id="detail-worker-avatar" class="detail-worker-avatar" src="" alt="" onerror="this.style.display='none'">
+                    <div class="detail-worker-fallback-icon" id="detail-worker-icon"><i class="fa fa-user-astronaut"></i></div>
+                    <div class="detail-worker-info">
+                        <h4 id="detail-worker-name">—</h4>
+                        <div class="detail-worker-meta-row">
+                            <span id="detail-worker-rating">⭐ —</span>
+                            <span id="detail-worker-vehicle" class="driver-plate-tag">—</span>
+                        </div>
+                    </div>
+                    <a id="detail-worker-phone" href="tel:" class="detail-call-btn"><i class="fa fa-phone"></i></a>
+                </div>
+
+                <!-- Service info -->
+                <div class="detail-info-card">
+                    <div class="detail-service-badge" id="detail-service-name">—</div>
+                    <div class="detail-route-block">
+                        <div class="detail-route-row">
+                            <div class="route-dot from"></div>
+                            <span id="detail-route-from">—</span>
+                        </div>
+                        <div class="route-line"></div>
+                        <div class="detail-route-row">
+                            <div class="route-dot to"></div>
+                            <span id="detail-route-to">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Price summary -->
+                <div class="detail-price-card">
+                    <div class="detail-kv"><span>Total Pembayaran</span><b id="detail-price" style="font-size:1.1rem;color:var(--navy);">—</b></div>
+                    <div class="detail-kv"><span>BantuPoints Earned</span><b id="detail-points" style="color:#16a34a;">—</b></div>
+                    <div class="detail-kv"><span>Waktu Pesanan</span><b id="detail-timestamp">—</b></div>
+                </div>
+
+                <!-- Details breakdown -->
+                <div class="detail-info-card" id="detail-breakdown-card">
+                    <div class="detail-section-title"><i class="fa fa-list-check"></i> Detail Layanan</div>
+                    <div id="detail-breakdown"></div>
+                </div>
+
+                <!-- Chat section -->
+                <div class="detail-chat-section" id="detail-chat-section">
+                    <div class="detail-section-title"><i class="fa fa-comment-dots"></i> Obrolan dengan Mitra</div>
+                    <div id="detail-chat-messages" class="detail-chat-messages"></div>
+                    <div class="detail-chat-input-row">
+                        <input type="text" id="detail-chat-input" class="detail-chat-input" placeholder="Ketik pesan ke mitra..." onkeydown="if(event.key==='Enter') sendDetailMessage()">
+                        <button onclick="sendDetailMessage()" class="detail-chat-send-btn"><i class="fa fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="detail-action-footer">
+                <button id="detail-complete-btn" class="detail-btn-complete" onclick="completeCurrentOrder()" style="display:none;">
+                    <i class="fa fa-circle-check"></i> Selesaikan Pesanan
+                </button>
+                <button id="detail-cancel-btn" class="detail-btn-cancel" onclick="cancelCurrentOrder()" style="display:none;">
+                    <i class="fa fa-circle-xmark"></i> Batalkan
+                </button>
+                <button id="detail-chat-open-btn" data-order-id="" onclick="document.getElementById('detail-chat-input').focus()" class="detail-btn-chat">
+                    <i class="fa fa-comment-dots"></i> Chat Mitra
+                </button>
+            </div>
+        </section>
+
+        <!-- PANEL 6: WORKER DASHBOARD — role-based view with tabs -->
+        <section id="worker-view" class="app-panel-view" style="display:none; flex-direction:column; height:100%; overflow:hidden;">
+
+            <!-- Worker sticky header -->
+            <div class="worker-app-header">
+                <div style="display:flex; align-items:center; gap:10px; flex:1;">
+                    <div class="worker-header-avatar"><i class="fa fa-helmet-safety"></i></div>
+                    <div>
+                        <div style="font-weight:800; font-size:0.92rem; color:var(--navy);" id="worker-name">—</div>
+                        <div style="font-size:0.72rem; color:var(--text-secondary);" id="worker-status-label">—</div>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <label class="worker-toggle-switch" style="transform:scale(0.85);">
+                        <input type="checkbox" id="worker-status-toggle" checked>
+                        <span class="worker-toggle-slider"></span>
+                    </label>
+                    <button onclick="handleLogout()" class="worker-logout-btn">
+                        <i class="fa fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Worker tab contents (scrollable) -->
+            <div class="worker-tab-body">
+
+                <!-- TAB: BERANDA -->
+                <div id="wtab-home" class="worker-tab-content active">
+                    <!-- Profile card -->
+                    <div class="worker-profile-card">
+                        <div class="worker-avatar-lg"><i class="fa fa-user-astronaut"></i></div>
+                        <div class="worker-profile-info">
+                            <h3 id="worker-name-2">—</h3>
+                            <div class="worker-badges-row">
+                                <span class="worker-badge-pill service" id="worker-service">—</span>
+                                <span class="worker-badge-pill rating" id="worker-rating">⭐ —</span>
+                            </div>
+                            <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:4px;" id="worker-vehicle">—</div>
+                        </div>
+                        <div class="worker-earnings-pill">
+                            <span style="font-size:0.7rem; color:rgba(255,255,255,0.7);">Saldo</span>
+                            <span style="font-weight:800; font-size:1rem;" id="worker-balance">—</span>
+                        </div>
+                    </div>
+
+                    <!-- Mini map -->
+                    <div class="map-preview-card" style="margin-bottom:18px;">
+                        <div class="map-card-header">
+                            <h4><i class="fa fa-map-location-dot"></i> Posisi Kamu</h4>
+                            <span class="live-badge">GPS</span>
+                        </div>
+                        <div id="worker-map" style="height:180px;"></div>
+                    </div>
+
+                    <!-- Services = list of available orders from users -->
+                    <div class="section-title">Layanan Tersedia</div>
+                    <div class="services-grid-matrix" style="margin-bottom:16px;">
+                        <div class="service-item-btn worker-service-btn" onclick="showWorkerOrderList('BantuRide')">
+                            <div class="s-icon-box ride"><i class="fa fa-motorcycle"></i></div>
+                            <span>BantuRide</span><small>Ojek & Mobil</small>
+                        </div>
+                        <div class="service-item-btn worker-service-btn" onclick="showWorkerOrderList('BantuSend')">
+                            <div class="s-icon-box send"><i class="fa fa-box"></i></div>
+                            <span>BantuSend</span><small>Kirim Paket</small>
+                        </div>
+                        <div class="service-item-btn worker-service-btn" onclick="showWorkerOrderList('BantuClean')">
+                            <div class="s-icon-box clean"><i class="fa fa-broom"></i></div>
+                            <span>BantuClean</span><small>Bersih Kos</small>
+                        </div>
+                        <div class="service-item-btn worker-service-btn" onclick="showWorkerOrderList('BantuFix')">
+                            <div class="s-icon-box fix"><i class="fa fa-wrench"></i></div>
+                            <span>BantuFix</span><small>Servis</small>
+                        </div>
+                        <div class="service-item-btn worker-service-btn" onclick="showWorkerOrderList('BantuShop')">
+                            <div class="s-icon-box shop"><i class="fa fa-bag-shopping"></i></div>
+                            <span>BantuShop</span><small>Belanja</small>
+                        </div>
+                    </div>
+
+                    <!-- Order list panel (shown when service clicked) -->
+                    <div id="worker-order-list-panel" style="display:none;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                            <div class="section-title" style="margin:0;" id="worker-order-list-title">Order Tersedia</div>
+                            <button onclick="document.getElementById('worker-order-list-panel').style.display='none'" style="background:none;border:none;font-size:0.8rem;color:var(--text-muted);cursor:pointer;">✕ Tutup</button>
+                        </div>
+                        <div id="worker-available-orders"></div>
+                    </div>
+                </div>
+
+                <!-- TAB: AKTIVITAS -->
+                <div id="wtab-activity" class="worker-tab-content">
+                    <div class="dashboard-header">
+                        <h2>Aktivitas Saya</h2>
+                        <p>Pesanan yang sedang dikerjakan</p>
+                    </div>
+                    <div id="worker-active-orders-list">
+                        <div class="empty-state-banner"><i class="fa fa-briefcase"></i><p>Belum ada pesanan aktif.</p></div>
+                    </div>
+                </div>
+
+                <!-- TAB: CHAT -->
+                <div id="wtab-chat" class="worker-tab-content">
+                    <div class="dashboard-header">
+                        <h2>Pesan dari Pelanggan</h2>
+                        <p>Chat dari pelanggan yang memesan</p>
+                    </div>
+                    <div id="worker-chats-list">
+                        <div class="empty-state-banner"><i class="fa fa-comment-dots"></i><p>Belum ada pesan masuk.</p></div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- MODAL: TOP UP -->
+<div id="topup-modal" class="global-modal-overlay">
+    <div class="modal-body-card">
+        <h3>Isi Saldo BantuPay</h3>
+        <p>Masukkan nominal top-up ke dompet digitalmu.</p>
+        <div class="input-group">
+            <label>Nominal (Rp)</label>
+            <input type="number" id="topup-amount-input" class="form-control" value="50000" min="10000" step="10000">
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px;">
+            <span class="qtag" onclick="document.getElementById('topup-amount-input').value=25000">Rp 25k</span>
+            <span class="qtag" onclick="document.getElementById('topup-amount-input').value=50000">Rp 50k</span>
+            <span class="qtag" onclick="document.getElementById('topup-amount-input').value=100000">Rp 100k</span>
+            <span class="qtag" onclick="document.getElementById('topup-amount-input').value=200000">Rp 200k</span>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn-ghost" onclick="toggleModal('topup-modal', false)">Batal</button>
+            <button type="button" class="btn-primary" onclick="executeTopUp()">Konfirmasi</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: QR -->
+<div id="qr-modal" class="global-modal-overlay">
+    <div class="modal-body-card" style="text-align:center; max-width:320px;">
+        <h3>QRIS BantuPay</h3>
+        <p>Tunjukkan QR ini ke merchant kampus untuk pembayaran instan.</p>
+        <div class="qr-placeholder-box"><i class="fa fa-qrcode" style="font-size:7rem; color:var(--navy);"></i></div>
+        <button type="button" class="btn-primary" style="width:100%;" onclick="toggleModal('qr-modal', false)">Tutup</button>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div id="system-toast" class="system-toast-alert">
+    <i class="fa fa-bell"></i>
+    <div>
+        <strong id="toast-title"></strong>
+        <p id="toast-desc"></p>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="infrastructure.js"></script>
+<script src="services.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

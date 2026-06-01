@@ -1,0 +1,12 @@
+{
+  "name": "stei-bantu-price-proxy",
+  "version": "1.0.0",
+  "description": "Local price estimator proxy for STEI Bantu (example)",
+  "main": "price-proxy.js",
+  "scripts": {
+    "start": "node price-proxy.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
