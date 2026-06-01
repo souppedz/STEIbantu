@@ -305,7 +305,8 @@ class ChatService {
 // --- External Price API wrapper (template) ---
 class PriceApiService {
     constructor(opts = {}) {
-        this.apiKey = opts.apiKey || 'AQ.Ab8RN6KDzfdlhwowvd3iDSrMwO6uuD90UxhWZ30sytZsKx-ZEQ';
+        // from a secure server-side proxy or set it explicitly during instantiation.
+        this.apiKey = opts.apiKey || null;
         this.endpoint = opts.endpoint || 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
     }
 
@@ -493,7 +494,7 @@ window.BANTUFIX_CATALOG = {
 window.locationService = new LocationService();
 window.priceEstimatorService = new PriceEstimatorService();
 // Default to local proxy endpoint. Replace with your deployed proxy URL in production.
-window.priceApi = new PriceApiService({ apiKey: 'TaroDisiniYaAPIKeyNya', endpoint: 'http://localhost:8001/api/price-estimate' });
+window.priceApi = new PriceApiService({ apiKey: null, endpoint: 'http://localhost:8001/api/price-estimate' });
 window.authService = new AuthService();
 window.orderService = new OrderService();
 window.chatService = new ChatService();
