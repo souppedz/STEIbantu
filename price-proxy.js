@@ -17,6 +17,24 @@ app.use((req, res, next) => {
 const EXTERNAL_PRICE_API_URL = process.env.EXTERNAL_PRICE_API_URL || null;
 const EXTERNAL_PRICE_API_KEY = process.env.EXTERNAL_PRICE_API_KEY || null;
 
+// Ensure `fetch` is available in this Node runtime (Node 18+ has global fetch).
+if (typeof fetch === 'undefined') {
+  try {
+    // Try to require node-fetch (may be v2 or v3); attempt commonjs default.
+    const nf = require('node-fetch');
+    global.fetch = nf.default || nf;
+    console.log('price-proxy: using node-fetch polyfill');
+  } catch (e) {
+    console.warn('price-proxy: global fetch not available and node-fetch not installed; please use Node 18+ or install node-fetch');
+  }
+}
+
+console.log('price-proxy: config', {
+  EXTERNAL_PRICE_API_URL: !!EXTERNAL_PRICE_API_URL,
+  EXTERNAL_PRICE_API_KEY: !!EXTERNAL_PRICE_API_KEY,
+  PORT: port
+});
+
 // Helper: build Gemini/Generative Language JSON-schema request
 function buildGeminiPayload(userReq) {
   const userText = userReq.aiRequest || `Create a shopping cart for items requested: ${JSON.stringify(userReq.params || {})}`;
@@ -390,11 +408,8 @@ app.post('/api/price-estimate', async (req, res) => {
                   console.log('price-proxy: returning fallback-fix-serp ->', JSON.stringify(diag));
                   return res.json({ success: true, method: 'fallback-fix-serp', forwarded: serpUrl, parsed: diag, fare: localFare });
                 }
-                // If still no diag, return a generic diagnosis so frontend receives useful output
-                console.log('price-proxy: no serpapi results and no diag mapping; returning generic diagnosis');
-                const genericDiag = parseFallbackFixDiagnosis('');
-                const localFare = { total: genericDiag.totalEstimate, pointsEarned: Math.floor(genericDiag.totalEstimate / 100), laborCost: genericDiag.laborCost };
-                return res.json({ success: true, method: 'fallback-fix-generic', forwarded: serpUrl, parsed: genericDiag, fare: localFare });
+                // If still no diag, do NOT return a generic static diagnosis — fallthrough to allow local estimators/fallbacks
+                console.log('price-proxy: no serpapi results and no diag mapping; falling through to local fallback');
               }
             }
             console.log('price-proxy: returning external-serpapi parsed ->', JSON.stringify({ cart, estimatedItemsCost }).slice(0,1000));

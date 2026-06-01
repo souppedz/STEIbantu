@@ -4,7 +4,8 @@
   "description": "Local price estimator proxy for STEI Bantu (example)",
   "main": "price-proxy.js",
   "scripts": {
-    "start": "node price-proxy.js"
+    "start": "node price-proxy.js",
+    "price-proxy": "node price-proxy.js"
   },
   "dependencies": {
     "express": "^4.18.2"

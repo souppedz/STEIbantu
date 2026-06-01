@@ -597,6 +597,63 @@ function renderCartPanel() {
 // ============================================================
 // AI BANTUSHOP
 // ============================================================
+// Lightweight frontend fallback parsers (run when proxy/external AI unavailable)
+function frontendParseFallbackCartFromQuery(rawQuery) {
+    try {
+        const q = (rawQuery || '').toString().toLowerCase();
+        const parts = q.split(/,| dan |\+|;/).map(s => s.trim()).filter(Boolean);
+        const map = [
+            { keys: ['nasi kotak','nasi box'], price: 20000, unit: 'porsi' },
+            { keys: ['air mineral','galon','air galon'], price: 22000, unit: 'galon' },
+            { keys: ['paracetamol','parasetamol'], price: 6000, unit: 'strip' },
+            { keys: ['kertas hvs','hvs'], price: 55000, unit: 'rim' },
+            { keys: ['indomie','mie instan'], price: 2500, unit: 'pcs' }
+        ];
+        const fallbackCart = [];
+        for (const p of parts) {
+            let qty = 1;
+            const m = p.match(/(\d+)\s*(porsi|pcs|strip|galon|botol|dos|pack|rim)?/i);
+            if (m) qty = parseInt(m[1]);
+            for (const entry of map) {
+                if (entry.keys.some(k => p.includes(k))) {
+                    fallbackCart.push({ name: p.slice(0,200), qty, unitPrice: entry.price, currency: 'IDR', sourceUrl: '' });
+                    break;
+                }
+            }
+        }
+        return fallbackCart;
+    } catch (e) { return []; }
+}
+
+function frontendParseFallbackFixDiagnosis(rawQuery) {
+    try {
+        const q = (rawQuery || '').toString().toLowerCase();
+        const mappings = [
+            { keys: ['lampu','mati','tidak menyala'], category: 'Kelistrikan', diagnosis: 'Lampu tidak menyala, kemungkinan bohlam putus', parts: [{ part: 'Bohlam LED', estimatedCost: 15000 }], labor: 20000, duration: '15-30 mnt' },
+            { keys: ['stop kontak','konslet'], category: 'Kelistrikan', diagnosis: 'Stop kontak bermasalah/korslet', parts: [{ part: 'Stop Kontak', estimatedCost: 30000 }], labor: 35000, duration: '20-45 mnt' },
+            { keys: ['ac','ac tidak dingin'], category: 'AC / Pendingin', diagnosis: 'AC kurang dingin, perlu pembersihan/cek freon', parts: [{ part: 'Servis AC (estimasi)', estimatedCost: 80000 }], labor: 80000, duration: '60-120 mnt' }
+        ];
+        for (const m of mappings) {
+            if (m.keys.some(k => q.includes(k))) {
+                const parts = m.parts || [];
+                const partsCost = parts.reduce((s,p) => s + (p.estimatedCost||0), 0);
+                const total = partsCost + (m.labor || 40000);
+                return {
+                    diagnosis: m.diagnosis,
+                    severity: 'Sedang',
+                    category: m.category,
+                    partsNeeded: parts,
+                    laborCost: m.labor || 40000,
+                    totalEstimate: total,
+                    estimatedDuration: m.duration || '30-90 mnt',
+                    technicianNote: 'Perkiraan awal — teknisi akan verifikasi di lokasi.',
+                    diyTip: ''
+                };
+            }
+        }
+        return null;
+    } catch (e) { return null; }
+}
 async function runAiBantuShopSearch() {
     const query = document.getElementById('shop-ai-query')?.value?.trim();
     if (!query) { showToast('Masukkan Permintaan', 'Ketik dulu apa yang ingin kamu beli!'); return; }
@@ -622,6 +679,22 @@ async function runAiBantuShopSearch() {
                 renderShopAiResult(result, query);
                 const hidden = document.getElementById('shop-ai-items-cost');
                 if (hidden) hidden.value = result.totalEstimate;
+                updateLivePrices();
+                return;
+            }
+            // If proxy returned nothing usable, try a lightweight frontend fallback parser
+            const fbCart = frontendParseFallbackCartFromQuery(query);
+            if (fbCart && fbCart.length) {
+                const parsed = { cart: fbCart, estimatedItemsCost: fbCart.reduce((s,i)=>s+(i.unitPrice||0)*(i.qty||1),0) };
+                const result = {
+                    items: parsed.cart.map(i => ({ name: i.name, estimatedPrice: i.unitPrice, unit: 'pcs', where: i.sourceUrl || '', note: '' })),
+                    totalEstimate: parsed.estimatedItemsCost || 0,
+                    serviceFee: 3000,
+                    runnerNote: '',
+                    suggestedStores: []
+                };
+                renderShopAiResult(result, query);
+                const hidden = document.getElementById('shop-ai-items-cost'); if (hidden) hidden.value = result.totalEstimate;
                 updateLivePrices();
                 return;
             }
@@ -710,6 +783,9 @@ async function runAiBantuFixDiagnosis() {
                 renderFixAiResult(apiRes.parsed, query);
                 return;
             }
+            // Try a frontend fallback diagnosis before attempting direct external AI
+            const fbDiag = frontendParseFallbackFixDiagnosis(query);
+            if (fbDiag) { renderFixAiResult(fbDiag, query); return; }
         }
         // Fallback: attempt direct Claude/Anthropic call (may fail in browser due to missing key/CORS)
         const res = await fetch('https://api.anthropic.com/v1/messages', {

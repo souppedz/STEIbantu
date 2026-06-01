@@ -314,12 +314,11 @@ class PriceApiService {
     // Note: For security, proxy this request through your server — do NOT embed real API keys in frontend.
     async fetchEstimate(payload) {
         try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (this.apiKey) headers['x-api-key'] = this.apiKey;
             const res = await fetch(this.endpoint, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': this.apiKey
-                },
+                headers,
                 body: JSON.stringify(payload)
             });
             if (!res.ok) throw new Error(`Price API error ${res.status}`);
